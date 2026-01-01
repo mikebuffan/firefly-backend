@@ -73,7 +73,12 @@ async function getMemory(db: ReturnType<typeof supabaseAdmin>, authedUserId: str
 }
 
 export async function POST(req: Request) {
-  const authedUserId = await requireUserId(req);
+  let authedUserId: string;
+  try {
+    authedUserId = await requireUserId(req);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

@@ -1,5 +1,3 @@
-console.log("STRIPE WEBHOOK HIT:", req.method);
-
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseServer";
@@ -31,12 +29,12 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    const userId = session.client_reference_id; // we set this in checkout route
+    const authedUserId = session.client_reference_id; // we set this in checkout route
     const customerId = session.customer as string;
 
-    if (userId && customerId) {
+    if (authedUserId && customerId) {
       await db.from("billing_customers").upsert({
-        user_id: userId,
+        user_id: authedUserId,
         stripe_customer_id: customerId,
         subscription_status: "active",
         updated_at: new Date().toISOString(),
