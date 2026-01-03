@@ -43,13 +43,13 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
+    const sub = event.data.object as Stripe.Subscription; 
     const customerId = sub.customer as string;
 
     await db.from("billing_customers").update({
       subscription_status: sub.status,
       price_id: sub.items.data[0]?.price?.id ?? null,
-      current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+      current_period_end: sub.current_period_end  ? new Date(sub.current_period_end * 1000).toISOString()  : null,
       updated_at: new Date().toISOString(),
     }).eq("stripe_customer_id", customerId);
   }
