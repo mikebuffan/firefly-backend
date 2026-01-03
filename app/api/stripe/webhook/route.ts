@@ -14,10 +14,23 @@ function getCustomerId(sub: any): string | null {
   return null;
 }
 
-function getCurrentPeriodEnd(sub: any): number | null {
-  // Stripe uses current_period_end (unix seconds) on most subscription objects
-  const v = sub?.current_period_end;
-  return typeof v === "number" ? v : null;
+function getCurrentPeriodEnd(sub: Stripe.Subscription): number | null {
+  // Prefer subscription-level if present (some API versions/types)
+  const anySub = sub as any;
+
+  const subLevel = typeof anySub.current_period_end === "number"
+    ? anySub.current_period_end
+    : null;
+
+  if (subLevel) return subLevel;
+
+  // Fallback: subscription item level (documented)
+  const itemLevel =
+    typeof sub.items?.data?.[0]?.current_period_end === "number"
+      ? sub.items.data[0].current_period_end
+      : null;
+
+  return itemLevel ?? null;
 }
 
 export async function POST(req: Request) {
@@ -40,6 +53,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const subscription = event.data.object as Stripe.Subscription;
+  const currentPeriodEnd = getCurrentPeriodEnd(subscription);
   const db = supabaseAdmin();
 
   if (event.type === "checkout.session.completed") {
